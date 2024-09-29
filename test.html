@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MRG-Bench Leaderboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #444;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 1000px;
+            margin: auto;
+            margin-bottom: 50px;
+        }
+        .chart {
+            width: 100%;
+            height: 600px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #777;
+        }
+        .center {
+    text-align: center;
+}
+.chart-container p {
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+
+    </style>
+    <!-- Include Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+</head>
+<body>
+
+    <h1>Introduction to MRG-Bench</h1>
+    <p>MRG-Bench is a repository-level code generation dataset designed to evaluate the performance of different models on practical code generation tasks.</p>
+
+    <h2 class="center">Leaderboard</h2>
+
+    <!-- Direct Generation Data -->
+    <div class="chart-container">
+        <h3>Direct Generation Results</h3>
+        <p></p>
+        <div id="directGenerationChart" class="chart"></div>
+    </div>
+
+    <!-- Context Methods Data -->
+    <div class="chart-container">
+        <h3>Context Methods Results</h3>
+        <div id="contextChart" class="chart"></div>
+    </div>
+
+    <!-- RAG Methods Data -->
+    <div class="chart-container">
+        <h3>RAG Methods Results</h3>
+        <div id="ragChart" class="chart"></div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2023 MRG-Bench</p>
+    </div>
+
+    <script>
+        // Define models for Direct Generation
+        const directModels = [
+            'codellama-13B',
+            'deepseek',
+            'starchat2',
+            'llama3.1',
+            'gpt4-o',
+            'claude3'
+        ];
+
+        // Metrics
+        const metrics = [
+            'Python Pass@1',
+            'Python Pass@3',
+            'Java Pass@1',
+            'Java Pass@3',
+            'Go Pass@1',
+            'Go Pass@3',
+            // 'HumanEval'
+        ];
+
+        // Data for Direct Generation
+        const directDataValues = {
+            'Python Pass@1': [7.59, 6.96, 6.96, 6.96, 7.59, 12.66],
+            'Python Pass@3': [12.66, 10.13, 10.13, 8.23, null, null],
+            'Java Pass@1': [1.89, 3.77, 5.66, 5.66, 4.72, 5.66],
+            'Java Pass@3': [3.77, 6.60, 9.43, 6.60, null, null],
+            'Go Pass@1': [4.33, 5.51, 5.51, 1.18, 3.54, 8.27],
+            'Go Pass@3': [6.69, 7.48, 7.48, 1.57, null, null]
+            // 'HumanEval': [50.6, 80.02, 44.15, 72.6, 90.2, 92.0]
+        };
+
+        // Colors for Direct Generation (low-saturation)
+        const directColors = [
+            'rgba(166, 206, 227, 0.7)', // Light Blue
+            'rgba(178, 223, 138, 0.7)', // Light Green
+            'rgba(251, 154, 153, 0.7)', // Light Red
+            'rgba(253, 191, 111, 0.7)', // Light Orange
+            'rgba(202, 178, 214, 0.7)', // Light Purple
+            'rgba(255, 255, 153, 0.7)' // Light Yellow
+            // 'rgba(200, 200, 200, 0.7)'  // Light Grey
+        ];
+
+        // Prepare data for Direct Generation Chart
+        let directData = [];
+        metrics.forEach((metric, index) => {
+            directData.push({
+                x: directModels,
+                y: directDataValues[metric],
+                name: metric,
+                type: 'bar',
+                marker: {
+                    color: directColors[index % directColors.length]
+                },
+                text: directDataValues[metric].map(value => value !== null ? `${value}%` : 'N/A'),
+                textposition: 'auto',
+                hovertemplate: '%{x}: %{y}%<extra></extra>'
+            });
+        });
+
+        var directLayout = {
+            barmode: 'group',
+            title: 'Direct Generation Results',
+            xaxis: {
+                title: 'Models',
+                tickangle: -45,
+                automargin: true
+            },
+            yaxis: {
+                title: 'Percentage (%)',
+                autorange: true // 设置 y 轴自动缩放
+            },
+            legend: {
+                orientation: 'h',
+                x: 0,
+                y: -0.2
+            },
+            margin: {
+                l: 60,
+                r: 50,
+                b: 150,
+                t: 50
+            }
+        };
+
+        Plotly.newPlot('directGenerationChart', directData, directLayout);
+
+        // Define models for Context Methods
+        const contextModels = [
+            'CodeLLaMA-13B-Instruct',
+            'DeepSeek-Coder-33B',
+            'LLaMA3.1-8B-Instruct',
+            'GPT-4o',
+            'Claude3.5-Sonnet',
+            'Claude3.5-Sonnet (Long Context)',
+            'DeepSeek-Coder (Long Context)'
+        ];
+
+        // Data for Context Methods
+        const contextDataValues = {
+            'Python Pass@1': [14.56, 21.52, 14.56, 29.11, 29.75, 29.11, 23.42],
+            'Python Pass@3': [21.52, 29.75, 20.89, null, null, null, null],
+            'Java Pass@1': [13.21, 20.75, 16.98, 22.64, 26.42, 31.13, 30.19],
+            'Java Pass@3': [18.87, 24.53, 21.70, null, null, null, null],
+            'Go Pass@1': [16.14, 19.69, 13.39, 29.53, 33.46, 34.65, 29.53],
+            'Go Pass@3': [22.05, 27.95, 19.29, null, null, null, null]
+        };
+
+        // Colors for Context Methods (low-saturation)
+        const contextColors = [
+            'rgba(141, 211, 199, 0.7)', // Light Teal
+            'rgba(255, 255, 179, 0.7)', // Light Yellow
+            'rgba(190, 186, 218, 0.7)', // Light Lavender
+            'rgba(251, 128, 114, 0.7)', // Light Coral
+            'rgba(128, 177, 211, 0.7)', // Light Blue
+            'rgba(253, 180, 98, 0.7)'   // Light Orange
+        ];
+
+        // Prepare data for Context Chart
+        let contextData = [];
+        Object.keys(contextDataValues).forEach((metric, index) => {
+            contextData.push({
+                x: contextModels,
+                y: contextDataValues[metric],
+                name: metric,
+                type: 'bar',
+                marker: {
+                    color: contextColors[index % contextColors.length]
+                },
+                text: contextDataValues[metric].map(value => value !== null ? `${value}%` : 'N/A'),
+                textposition: 'auto',
+                hovertemplate: '%{x}: %{y}%<extra></extra>'
+            });
+        });
+
+        var contextLayout = {
+            barmode: 'group',
+            title: 'Context Methods Results',
+            xaxis: {
+                title: 'Models',
+                tickangle: -45,
+                automargin: true
+            },
+            yaxis: {
+                title: 'Percentage (%)',
+                autorange: true // 设置 y 轴自动缩放
+            },
+            legend: {
+                orientation: 'h',
+                x: 0,
+                y: -0.2
+            },
+            margin: {
+                l: 60,
+                r: 50,
+                b: 150,
+                t: 50
+            }
+        };
+
+        Plotly.newPlot('contextChart', contextData, contextLayout);
+
+        // Define models for RAG Methods
+        const ragModels = [
+            'mix-rag',
+            'bm25-rag',
+            'bge3-rag',
+            'repocoder'
+        ];
+
+        // Data for RAG Methods
+        const ragDataValues = {
+            'Python Pass@1': [15.82, 13.29, 17.09, 15.82],
+            'Python Pass@3': [18.35, 17.09, 18.99, 18.35],
+            'Java Pass@1': [11.32, 9.43, 11.32, 20.75],
+            'Java Pass@3': [15.09, 14.15, 16.04, 21.70],
+            'Go Pass@1': [9.84, 7.48, 10.24, 17.72],
+            'Go Pass@3': [14.17, 10.63, 14.96, 20.08]
+        };
+
+        // Colors for RAG Methods (low-saturation)
+        const ragColors = [
+            'rgba(188, 128, 189, 0.7)', // Light Purple
+            'rgba(204, 235, 197, 0.7)', // Light Green
+            'rgba(255, 237, 111, 0.7)', // Light Yellow
+            'rgba(179, 222, 105, 0.7)', // Light Lime
+            'rgba(252, 205, 229, 0.7)', // Light Pink
+            'rgba(217, 217, 217, 0.7)'  // Light Grey
+        ];
+
+        // Prepare data for RAG Chart
+        let ragData = [];
+        Object.keys(ragDataValues).forEach((metric, index) => {
+            ragData.push({
+                x: ragModels,
+                y: ragDataValues[metric],
+                name: metric,
+                type: 'bar',
+                marker: {
+                    color: ragColors[index % ragColors.length]
+                },
+                text: ragDataValues[metric].map(value => value !== null ? `${value}%` : 'N/A'),
+                textposition: 'auto',
+                hovertemplate: '%{x}: %{y}%<extra></extra>'
+            });
+        });
+
+        var ragLayout = {
+            barmode: 'group',
+            title: 'RAG Methods Results',
+            xaxis: {
+                title: 'Methods',
+                tickangle: -45,
+                automargin: true
+            },
+            yaxis: {
+                title: 'Percentage (%)',
+                autorange: true // 设置 y 轴自动缩放
+            },
+            legend: {
+                orientation: 'h',
+                x: 0,
+                y: -0.2
+            },
+            margin: {
+                l: 60,
+                r: 50,
+                b: 150,
+                t: 50
+            }
+        };
+
+        Plotly.newPlot('ragChart', ragData, ragLayout);
+
+    </script>
+</body>
+</html>
