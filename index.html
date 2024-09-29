@@ -32,9 +32,8 @@
     text-align: center;
 }
 .chart-container p {
-    font-size: 14px;
+    font-size: 16px;
     color: #555;
-    text-align: center;
     margin-bottom: 20px;
 }
 
@@ -45,28 +44,49 @@
 </head>
 <body>
 
-    <h1>Introduction to MRG-Bench</h1>
-    <p>MRG-Bench is a repository-level code generation dataset designed to evaluate the performance of different models on practical code generation tasks.</p>
+    <h1 class="center">Introduction to MRG-Bench</h1>
+    <p class="center">MRG-Bench is a repository-level code generation dataset designed to evaluate the performance of different models on practical code generation tasks.</p>
 
     <h2 class="center">Leaderboard</h2>
 
     <!-- Direct Generation Data -->
     <div class="chart-container">
         <h3>Direct Generation Results</h3>
-        <p></p>
+        <p>Providing the function annotations and function signatures as input and ask the model to generate the corresponding function body</p>
         <div id="directGenerationChart" class="chart"></div>
     </div>
 
     <!-- Context Methods Data -->
     <div class="chart-container">
         <h3>Context Methods Results</h3>
+        <p>Providing different context, including in_file context, useful function body or signatures, and the whole folder context</p>
         <div id="contextChart" class="chart"></div>
     </div>
 
     <!-- RAG Methods Data -->
     <div class="chart-container">
         <h3>RAG Methods Results</h3>
+        <p>Different RAG based methods</p>
         <div id="ragChart" class="chart"></div>
+    </div>
+    
+     <!-- PDLR and RejR Charts -->
+     <div class="chart-container">
+        <h3>PDLR Scores</h3>
+        <p>PDLR (Potential Data Leakage Rate) measures whether the model remembers information from the open-source repository. 
+            Specifically, if the model use an api from the repository without being provided in its context when generating, we consider this a case of potential data leakage.  
+            A high PDL-rate indicates that the model's evaluation results are not reliable.</p>
+        <div id="pdlrChart" class="chart"></div>
+    </div>
+    <!-- PDLR and RejR Charts -->
+    <div class="chart-container">
+        <h3>RejR Scores</h3>
+        <p>RejR (Rejection Rate) metric evaluates the model's ability to effectively utilize the provided contextual information. 
+            For each sample, we compare the model's input context and its generated result. 
+            If a function from the provided context appears in the input but is not utilized in the generated result, the sample is marked as rejected.
+            A higher rejection rate indicates that the model struggles to utilize the contextual information effectively, reflecting poorer performance in code generation.
+        </p>
+        <div id="rejrChart" class="chart"></div>
     </div>
 
     <div class="footer">
@@ -301,13 +321,137 @@
             margin: {
                 l: 60,
                 r: 50,
-                b: 150,
+                b: 200,
                 t: 50
             }
         };
 
         Plotly.newPlot('ragChart', ragData, ragLayout);
+// Models
+const pdrModels = [
+            'DeepSeek-Coder-33B',
+            'CodeLLaMA-13B-Instruct',
+            'LLaMA-3.1-Instruct',
+            'GPT-4o',
+            'Claude3.5-Sonnet'
+        ];
+
+        // PDLR Data
+        const pdlrDataValues = {
+            'Python': [0.006, 0.013, 0.012, 0.013, 0.006],
+            'Java': [0.113, 0.047, 0.038, 0.132, 0.170],
+            'Go': [0.090, 0.043, 0.074, 0.102, 0.150]
+        };
+
+        // RejR Data
+        const rejrDataValues = {
+            'Python': [0.484, 0.528, 0.453, 0.383, 0.308],
+            'Java': [0.302, 0.396, 0.387, 0.292, 0.292],
+            'Go': [0.362, 0.425, 0.374, 0.283, 0.244]
+        };
+
+        // Colors (low-saturation)
+        const pdlrColors = [
+            'rgba(166, 206, 227, 0.7)', // Light Blue
+            'rgba(178, 223, 138, 0.7)', // Light Green
+            'rgba(251, 154, 153, 0.7)'  // Light Red
+        ];
+
+        const rejrColors = [
+            'rgba(253, 191, 111, 0.7)', // Light Orange
+            'rgba(202, 178, 214, 0.7)', // Light Purple
+            'rgba(255, 255, 153, 0.7)'  // Light Yellow
+        ];
+
+        // Prepare data for PDLR Chart
+        let pdlrData = [];
+        Object.keys(pdlrDataValues).forEach((language, index) => {
+            pdlrData.push({
+                x: pdrModels,
+                y: pdlrDataValues[language],
+                name: language,
+                type: 'bar',
+                marker: {
+                    color: pdlrColors[index % pdlrColors.length]
+                },
+                text: pdlrDataValues[language].map(value => value !== null ? value.toFixed(3) : 'N/A'),
+                textposition: 'auto',
+                hovertemplate: '%{x}: %{y:.3f}<extra></extra>'
+            });
+        });
+
+        var pdlrLayout = {
+            barmode: 'group',
+            title: 'PDLR Scores',
+            xaxis: {
+                title: 'Models',
+                tickangle: -45,
+                automargin: true
+            },
+            yaxis: {
+                title: 'PDLR Value',
+                autorange: true
+            },
+            legend: {
+                orientation: 'h',
+                x: 0,
+                y: -0.2
+            },
+            margin: {
+                l: 60,
+                r: 50,
+                b: 150,
+                t: 50
+            }
+        };
+
+        Plotly.newPlot('pdlrChart', pdlrData, pdlrLayout);
+
+        // Prepare data for RejR Chart
+        let rejrData = [];
+        Object.keys(rejrDataValues).forEach((language, index) => {
+            rejrData.push({
+                x: pdrModels,
+                y: rejrDataValues[language],
+                name: language,
+                type: 'bar',
+                marker: {
+                    color: rejrColors[index % rejrColors.length]
+                },
+                text: rejrDataValues[language].map(value => value !== null ? value.toFixed(3) : 'N/A'),
+                textposition: 'auto',
+                hovertemplate: '%{x}: %{y:.3f}<extra></extra>'
+            });
+        });
+
+        var rejrLayout = {
+            barmode: 'group',
+            title: 'RejR Scores',
+            xaxis: {
+                title: 'Models',
+                tickangle: -45,
+                automargin: true
+            },
+            yaxis: {
+                title: 'RejR Value',
+                autorange: true
+            },
+            legend: {
+                orientation: 'h',
+                x: 0,
+                y: -0.2
+            },
+            margin: {
+                l: 60,
+                r: 50,
+                b: 150,
+                t: 50
+            }
+        };
+
+        Plotly.newPlot('rejrChart', rejrData, rejrLayout);
 
     </script>
 </body>
+
 </html>
